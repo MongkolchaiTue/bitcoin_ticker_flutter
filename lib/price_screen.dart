@@ -9,13 +9,64 @@ class PriceScreen extends StatefulWidget {
 }
 
 class _PriceScreenState extends State<PriceScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    getData();
+  }
+
+  bool visiblePicker = false;
   String selectedCurrency = 'USD';
+  int _selectedIndex = 19;
+  List<String> cryptoValueInCurrencyList = ['?', '?', '?'];
+  getData() async {
+    try {
+      for (int index = 0; index < cryptoList.length; index++)
+        if (cryptoValueInCurrencyList[index] == '?') {
+          double data =
+              await CoinData().getCoinData(cryptoList[index], selectedCurrency);
+          setState(() {
+            cryptoValueInCurrencyList[index] = data.toStringAsFixed(0);
+          });
+        }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  List<Widget> getCardCryptoValueInCurrency() {
+    return List<Widget>.generate(cryptoList.length, (int index) {
+      return Card(
+        color: Colors.lightBlueAccent,
+        elevation: 5.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
+          child: Text(
+            '1 ${cryptoList[index]} = ${cryptoValueInCurrencyList[index]} $selectedCurrency',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+    });
+  }
 
   Widget iOSPicker() {
     return CupertinoPicker(
+      backgroundColor: Colors.lightBlue,
       itemExtent: 32.0,
+      scrollController: FixedExtentScrollController(
+        initialItem: _selectedIndex,
+      ),
       onSelectedItemChanged: (selectedIndex) {
-        print(selectedIndex);
+        _selectedIndex = selectedIndex;
       },
       children: List<Widget>.generate(currenciesList.length, (int index) {
         return Text(currenciesList[index]);
@@ -42,13 +93,16 @@ class _PriceScreenState extends State<PriceScreen> {
   }
 
   Widget getPicker() {
+    setState(() {
+      visiblePicker = true;
+    });
     // print(Platform.operatingSystem); //flutter: ios
     if (Platform.isIOS) {
       return iOSPicker();
-    } else if (Platform.isAndroid) {
+    } else {
+      //if (Platform.isAndroid) {
       return androidDropdown();
     }
-    return Text('None');
   }
 
   @override
@@ -63,31 +117,21 @@ class _PriceScreenState extends State<PriceScreen> {
         children: <Widget>[
           Padding(
             padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = ? USD',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: getCardCryptoValueInCurrency(),
             ),
           ),
-          Container(
-            height: 150.0,
-            alignment: Alignment.center,
-            padding: EdgeInsets.only(bottom: 30.0),
-            color: Colors.lightBlue,
-            child: getPicker(),
+          Visibility(
+            visible: visiblePicker,
+            child: Container(
+              height: 150.0,
+              alignment: Alignment.center,
+              padding: EdgeInsets.only(bottom: 30.0),
+              color: Colors.lightBlue,
+              child: getPicker(),
+            ),
           ),
         ],
       ),
