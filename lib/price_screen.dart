@@ -14,20 +14,22 @@ class _PriceScreenState extends State<PriceScreen> {
     super.initState();
 
     getData();
+    _visiblePicker = true;
   }
 
-  bool visiblePicker = false;
-  String selectedCurrency = 'USD';
+  bool _visiblePicker = false;
+  String _selectedCurrency = 'USD';
   int _selectedIndex = 19;
-  List<String> cryptoValueInCurrencyList = ['?', '?', '?'];
+  List<String> _cryptoValueInCurrencyList = ['?', '?', '?'];
+
   getData() async {
     try {
       for (int index = 0; index < cryptoList.length; index++)
-        if (cryptoValueInCurrencyList[index] == '?') {
-          double data =
-              await CoinData().getCoinData(cryptoList[index], selectedCurrency);
+        if (_cryptoValueInCurrencyList[index] == '?') {
+          double data = await CoinData()
+              .getCoinData(cryptoList[index], _selectedCurrency);
           setState(() {
-            cryptoValueInCurrencyList[index] = data.toStringAsFixed(0);
+            _cryptoValueInCurrencyList[index] = data.toStringAsFixed(0);
           });
         }
     } catch (e) {
@@ -46,7 +48,7 @@ class _PriceScreenState extends State<PriceScreen> {
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
           child: Text(
-            '1 ${cryptoList[index]} = ${cryptoValueInCurrencyList[index]} $selectedCurrency',
+            '1 ${cryptoList[index]} = ${_cryptoValueInCurrencyList[index]} $_selectedCurrency',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 20.0,
@@ -66,7 +68,10 @@ class _PriceScreenState extends State<PriceScreen> {
         initialItem: _selectedIndex,
       ),
       onSelectedItemChanged: (selectedIndex) {
+        _cryptoValueInCurrencyList = ['?', '?', '?'];
         _selectedIndex = selectedIndex;
+        _selectedCurrency = currenciesList[_selectedIndex];
+        getData();
       },
       children: List<Widget>.generate(currenciesList.length, (int index) {
         return Text(currenciesList[index]);
@@ -76,7 +81,7 @@ class _PriceScreenState extends State<PriceScreen> {
 
   Widget androidDropdown() {
     return DropdownButton<String>(
-      value: selectedCurrency,
+      value: _selectedCurrency,
       items: currenciesList.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
           value: value,
@@ -84,18 +89,15 @@ class _PriceScreenState extends State<PriceScreen> {
         );
       }).toList(),
       onChanged: (value) {
-        setState(() {
-          selectedCurrency = value ?? '';
-        });
-        print(value);
+        _cryptoValueInCurrencyList = ['?', '?', '?'];
+        _selectedCurrency = value ?? '';
+        _selectedIndex = currenciesList.indexOf(_selectedCurrency);
+        getData();
       },
     );
   }
 
   Widget getPicker() {
-    setState(() {
-      visiblePicker = true;
-    });
     // print(Platform.operatingSystem); //flutter: ios
     if (Platform.isIOS) {
       return iOSPicker();
@@ -124,7 +126,7 @@ class _PriceScreenState extends State<PriceScreen> {
             ),
           ),
           Visibility(
-            visible: visiblePicker,
+            visible: _visiblePicker,
             child: Container(
               height: 150.0,
               alignment: Alignment.center,
